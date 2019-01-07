@@ -1,2 +1,2 @@
 # Edge-DRL
-Dynamic Multi-User Computation Offloading for Mobile Edge Computing: A Multi-Agent Deep Reinforcement Learning Approach
+Research on incentive mechanism design in mobile crowdsensing and mobile edge computing by deep reinforcement learning approaches.

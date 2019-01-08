@@ -10,7 +10,7 @@ METHOD = [
     dict(name='kl_pen', kl_target=0.01, lam=0.5),  # KL penalty
     # Clipped surrogate objective, find this is better
     dict(name='clip', epsilon=0.1),
-    dict(name='ddpg', epsilon=0)
+    dict(name='a2c', epsilon=0)
 ][1]  # choose the method for optimization
 
 
@@ -68,7 +68,7 @@ class PPO(object):
         pi, pi_params, l2_loss_a = self._build_anet('pi', trainable=True)
         oldpi, oldpi_params, _ = self._build_anet('oldpi', trainable=False)
         with tf.variable_scope('sample_action'):
-            # choosing action  squeeze:去掉第一维（=1）
+            # choosing action  squeeze:reduce the first dimension
             self.sample_op = tf.squeeze(pi.sample(1), axis=0)
         with tf.variable_scope('update_oldpi'):
             self.update_oldpi_op = [oldp.assign(
@@ -188,7 +188,7 @@ class PPO(object):
             norm_dist = tf.distributions.Normal(
                 loc=mu, scale=sigma)  # loc：mean  scale：sigma
         params = tf.get_collection(
-            tf.GraphKeys.GLOBAL_VARIABLES, scope=name)  # 返回name=="name"的变量列表
+            tf.GraphKeys.GLOBAL_VARIABLES, scope=name) 
         # tf.nn.l2_loss(w4) + tf.nn.l2_loss(w5) + tf.nn.l2_loss(w6) + tf.nn.l2_loss(w7)
         l2_loss_a = 0
         return norm_dist, params, l2_loss_a
@@ -199,24 +199,9 @@ class PPO(object):
             self.tfs: s, self.decay: dec})
         # a, sigma, mu = self.sess.run([self.sample_op, self.sigma, self.mu], feed_dict={self.tfs: s, self.decay: dec})
 
-        return np.clip(a[0], 0.0001, 1)  # 把输出限制在[0, 5]之内
-
+        return np.clip(a[0], 0.0001, 1)  # clip the output
+    
     def get_v(self, s):
         if s.ndim < 2:
             s = s[np.newaxis, :]
         return self.sess.run(self.v, {self.tfs: s})[0, 0]
-
-    def preceive(self, state, action, reward, dec, alr, clr):
-        self.replay_memory.append((state, action, reward))
-        if len(self.replay_memory) > self.memory_size:
-            self.replay_memory.popleft()
-        else:
-            self.train_network(dec, alr, clr)
-
-    def train_network(self, dec, alr, clr):
-        mini_batch = random.sample(self.replay_memory, self.BATCH)
-        state_batch = [data[0] for data in mini_batch]
-        action_batch = [data[1] for data in mini_batch]
-        reward_batch = [data[2] for data in mini_batch]
-
-        self.update(state_batch, action_batch, reward_batch, dec, alr, clr)

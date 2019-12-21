@@ -1,3 +1,3 @@
 # Project
-Research on incentive mechanism design in mobile crowdsensing and mobile edge computing by deep reinforcement learning approaches.
+Research on DRL + Networking systems, including mobile crowdsensing system, edge computing, federated learning.
 
